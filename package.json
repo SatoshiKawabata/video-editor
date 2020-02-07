@@ -1,0 +1,21 @@
+{
+  "name": "video-editor",
+  "version": "1.0.0",
+  "main": "index.js",
+  "repository": "https://github.com/SatoshiKawabata/video-editor.git",
+  "author": "Satoshi Kawabata <satoshi.kawabata@nulab-inc.com>",
+  "license": "MIT",
+  "devDependencies": {
+    "@types/react": "^16.9.19",
+    "@types/react-dom": "^16.9.5",
+    "parcel-bundler": "^1.12.4",
+    "typescript": "^3.7.5"
+  },
+  "dependencies": {
+    "react": "^16.12.0",
+    "react-dom": "^16.12.0"
+  },
+  "scripts": {
+    "start": "parcel ./src/index.html"
+  }
+}
