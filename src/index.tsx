@@ -1,57 +1,94 @@
 import * as React from "react";
 import * as ReactDOM from "react-dom";
 
+import FFmpeg from "@ffmpeg/ffmpeg";
+
 type State = {
   videoSrc: string;
   audioSrc: string;
   downloadLink: string;
+  message: string;
 };
 
 const Application = () => {
   const [state, setState] = React.useState<State>({
     videoSrc: "",
     audioSrc: "",
-    downloadLink: ""
+    downloadLink: "",
+    message: ""
   });
-  const videoRef = React.createRef<HTMLVideoElement>();
-  const audioRef = React.createRef<HTMLAudioElement>();
+
+  const setMessage = (msg: string) => {
+    setState({ ...state, message: msg });
+    console.log(msg);
+  };
+
+  const { createWorker } = FFmpeg;
+  const worker = createWorker({
+    progress: ({ ratio }: { ratio: number }) => {
+      setMessage(`Complete ratio: ${ratio}`);
+    },
+    logger: (data: any) => console.log("logger", data)
+  });
+
+  const concat = async ({
+    target: { files }
+  }: React.ChangeEvent<HTMLInputElement>) => {
+    if (!files) {
+      return;
+    }
+    setMessage("Loading ffmpeg-core.js");
+    await worker.load();
+
+    const names = [];
+    for (const f of Array.from(files)) {
+      const { name } = f;
+      await worker.write(name, f);
+      if (name.indexOf(".mp4") < 0) {
+        const nameMp4 = name.split(".")[0] + ".mp4";
+        await worker.transcode(name, nameMp4);
+        // await worker.trim(nameMp4, nameMp4, "00:02:000", "00:3:500");
+        names.push(nameMp4);
+      } else {
+        names.push(name);
+      }
+    }
+
+    setMessage("Start concating: " + names);
+    // nameにスペースが入っているとエラーになった
+    await worker.concatDemuxer(names, "output.mp4");
+
+    setMessage("Complete concating");
+    const { data } = await worker.read("output.mp4");
+
+    console.log("data", data);
+
+    setState({
+      ...state,
+      videoSrc: URL.createObjectURL(
+        new Blob([data.buffer], { type: "video/mp4" })
+      )
+    });
+  };
+
   return (
     <>
       <input
         type="file"
         multiple
         onChange={e => {
-          if (e.target && e.target.files) {
-            const file = e.target.files[0];
-            console.log(file);
-            var fileURL = URL.createObjectURL(file);
-            setState({
-              ...state,
-              videoSrc: fileURL,
-              audioSrc: fileURL
-            });
-          }
+          concat(e);
         }}
       />
-      <video
-        ref={videoRef}
-        src={state.videoSrc}
-        onEnded={() => {
-          console.log("onended");
+      <video src={state.videoSrc} controls></video>
+      <input
+        type="number"
+        step="00.001"
+        onChange={e => {
+          console.log(e);
         }}
-      ></video>
-      <audio ref={audioRef} src={state.audioSrc}></audio>
-      <button
-        type="button"
-        onClick={() => {
-          videoRef.current?.play();
-          audioRef.current?.play();
-        }}
-      >
-        Start recording
-      </button>
-      <canvas ref="canvas"></canvas>
-      <a href={state.downloadLink}>download</a>
+      ></input>
+      <p>{state.message}</p>
     </>
   );
 };
