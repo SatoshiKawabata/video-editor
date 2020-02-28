@@ -25,8 +25,8 @@ const Application = () => {
 
   const { createWorker } = FFmpeg;
   const worker = createWorker({
-    progress: ({ ratio }: { ratio: number }) => {
-      setMessage(`Complete ratio: ${ratio}`);
+    progress: (data: any) => {
+      setMessage(`Complete ratio: ${data}`);
     },
     logger: (data: any) => console.log("logger", data)
   });
