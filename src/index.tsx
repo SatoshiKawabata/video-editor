@@ -18,15 +18,15 @@ const Application = () => {
     message: ""
   });
 
-  const setMessage = (msg: string) => {
-    setState({ ...state, message: msg });
-    console.log(msg);
+  const setMessage = (...args: any[]) => {
+    setState({ ...state, message: args.map(a => a).toString() });
+    console.log(args);
   };
 
   const { createWorker } = FFmpeg;
   const worker = createWorker({
     progress: (data: any) => {
-      setMessage(`Complete ratio: ${data}`);
+      setMessage(`Complete ratio:`, data);
     },
     logger: (data: any) => console.log("logger", data)
   });
@@ -46,15 +46,23 @@ const Application = () => {
       await worker.write(name, f);
       if (name.indexOf(".mp4") < 0) {
         const nameMp4 = name.split(".")[0] + ".mp4";
+        console.log("start transcode");
         await worker.transcode(name, nameMp4);
-        // await worker.trim(nameMp4, nameMp4, "00:02:000", "00:3:500");
-        names.push(nameMp4);
+        console.log("start trim");
+        const nameMp4Trimmed = name.split(".")[0] + "_trimmed" + ".mp4";
+        await worker.trim(
+          nameMp4,
+          nameMp4Trimmed,
+          "00:00:2.000",
+          "00:00:4.000"
+        );
+        names.push(nameMp4Trimmed);
       } else {
         names.push(name);
       }
     }
 
-    setMessage("Start concating: " + names);
+    setMessage("Start concating: ", names);
     // nameにスペースが入っているとエラーになった
     await worker.concatDemuxer(names, "output.mp4");
 
@@ -81,13 +89,15 @@ const Application = () => {
         }}
       />
       <video src={state.videoSrc} controls></video>
-      <input
-        type="number"
-        step="00.001"
-        onChange={e => {
-          console.log(e);
-        }}
-      ></input>
+      <div>
+        <input
+          type="number"
+          step="00.001"
+          onChange={e => {
+            console.log(e);
+          }}
+        ></input>
+      </div>
       <p>{state.message}</p>
     </>
   );
