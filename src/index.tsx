@@ -19,8 +19,8 @@ const Application = () => {
   });
 
   const setMessage = (...args: any[]) => {
-    setState({ ...state, message: args.map(a => a).toString() });
     console.log(args);
+    setState({ ...state, message: args.map(a => a).toString() });
   };
 
   const { createWorker } = FFmpeg;
@@ -37,8 +37,8 @@ const Application = () => {
     if (!files) {
       return;
     }
-    setMessage("Loading ffmpeg-core.js");
     await worker.load();
+    setMessage("Loading ffmpeg-core.js");
 
     const names = [];
     for (const f of Array.from(files)) {
@@ -58,7 +58,9 @@ const Application = () => {
         );
         names.push(nameMp4Trimmed);
       } else {
-        names.push(name);
+        const nameMp4Trimmed = name.split(".")[0] + "_trimmed" + ".mp4";
+        await worker.trim(name, nameMp4Trimmed, "00:00:2.000", "00:00:4.000");
+        names.push(nameMp4Trimmed);
       }
     }
 
