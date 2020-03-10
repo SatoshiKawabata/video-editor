@@ -1,4 +1,3 @@
-declare module '@ffmpeg/ffmpeg' {
-  const module: any;
-  export default module;
-}
+export type Video = {
+  original: File;
+};
